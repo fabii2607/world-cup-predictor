@@ -232,6 +232,21 @@ const css = `
   .champion-lbl { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #3d5270; letter-spacing: 2px; margin-bottom: 4px; }
   .champion-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #c9a227; letter-spacing: 2px; }
   .tooltip { position: absolute; background: #1a2540; border: 1px solid #c9a227; color: #e8dcc8; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; pointer-events: none; z-index: 10; white-space: nowrap; }
+
+.wc-footer {
+  background: #0d1525;
+  border-top: 1px solid #1e2d45;
+  color: #3d5270;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 10px;
+}
+
+.wc-footer span {
+  color: #c9a227;
+}
 `;
 
 // ─── Map Component ────────────────────────────────────────────────────────────
