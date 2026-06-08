@@ -109,3 +109,18 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.wc-footer {
+  background: #0d1525;
+  border-top: 1px solid #1e2d45;
+  color: #3d5270;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 10px;
+}
+
+.wc-footer span {
+  color: #c9a227;
+}
