@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
+const API_URL = "http://127.0.0.1:8000/predict";
+
 const T = {
   USA:{name:"United States",flag:"🇺🇸",str:82},MEX:{name:"Mexico",flag:"🇲🇽",str:75},CAN:{name:"Canada",flag:"🇨🇦",str:72},
   BRA:{name:"Brazil",flag:"🇧🇷",str:91},ARG:{name:"Argentina",flag:"🇦🇷",str:94},COL:{name:"Colombia",flag:"🇨🇴",str:78},
@@ -16,18 +18,12 @@ const T = {
   TUN:{name:"Tunisia",flag:"🇹🇳",str:64},ALG:{name:"Algeria",flag:"🇩🇿",str:67},JPN:{name:"Japan",flag:"🇯🇵",str:78},
   KOR:{name:"South Korea",flag:"🇰🇷",str:74},AUS:{name:"Australia",flag:"🇦🇺",str:69},IRN:{name:"Iran",flag:"🇮🇷",str:67},
   SAU:{name:"Saudi Arabia",flag:"🇸🇦",str:65},QAT:{name:"Qatar",flag:"🇶🇦",str:61},NZL:{name:"New Zealand",flag:"🇳🇿",str:59},
-  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73},HUN:{name:"Hungary",flag:"🇭🇺",str:68}, BIH:{name:"Bosnia and Herzegovina",flag:"🇧🇦",str:70},
-HTI:{name:"Haiti",flag:"🇭🇹",str:58},
-CZE:{name:"Czech Republic",flag:"🇨🇿",str:73},
-CUW:{name:"Curacao",flag:"🇨🇼",str:60},
-CIV:{name:"Ivory Coast",flag:"🇨🇮",str:72},
-CPV:{name:"Cape Verde",flag:"🇨🇻",str:65},
-NOR:{name:"Norway",flag:"🇳🇴",str:78},
-JOR:{name:"Jordan",flag:"🇯🇴",str:62},
-COD:{name:"DR Congo",flag:"🇨🇩",str:67},
-UZB:{name:"Uzbekistan",flag:"🇺🇿",str:69},
-GHA:{name:"Ghana",flag:"🇬🇭",str:68},
-PAN:{name:"Panama",flag:"🇵🇦",str:64}
+  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73},HUN:{name:"Hungary",flag:"🇭🇺",str:68},
+  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73}, HUN:{name:"Hungary",flag:"🇭🇺",str:68}, 
+  BIH:{name:"Bosnia and Herzegovina",flag:"🇧🇦",str:70},HTI:{name:"Haiti",flag:"🇭🇹",str:58},CZE:{name:"Czech Republic",flag:"🇨🇿",str:73},
+  CUW:{name:"Curacao",flag:"🇨🇼",str:60},CIV:{name:"Ivory Coast",flag:"🇨🇮",str:72},CPV:{name:"Cape Verde",flag:"🇨🇻",str:65},
+  NOR:{name:"Norway",flag:"🇳🇴",str:78},JOR:{name:"Jordan",flag:"🇯🇴",str:62},COD:{name:"DR Congo",flag:"🇨🇩",str:67},
+  UZB:{name:"Uzbekistan",flag:"🇺🇿",str:69},GHA:{name:"Ghana",flag:"🇬🇭",str:68},PAN:{name:"Panama",flag:"🇵🇦",str:64}
 };
 
 const ISO = {
@@ -53,45 +49,132 @@ const GROUPS = {
   L: ["ENG", "CRO", "GHA", "PAN"]
 };
 
+
+console.log("Teams in GROUPS:", groupTeamCodes);
+console.log("Missing from T:", missingFromT);
 // ─── Prediction logic ────────────────────────────────────────────────────────
 // Replace this function with a real API call to your backend.
 // Your API should receive { team_a: "BRA", team_b: "ARG" }
 // and return { pA: number, pB: number, pD: number, conf: number }
-function calcProb(cA, cB) {
-  const a = T[cA], b = T[cB], tot = a.str + b.str;
+function calcProbLocal(cA, cB) {
+  const a = T[cA];
+  const b = T[cB];
+  const tot = a.str + b.str;
+
   const rawA = (a.str / tot) * 100;
   const diff = Math.abs(a.str - b.str);
   const draw = Math.max(5, Math.min(28, 20 - diff * 0.15));
   const rem = 100 - draw;
+
   const pA = Math.round((rawA / 100) * rem);
-  const pB = 100 - Math.round(draw) - pA;
-  return { pA, pB, pD: Math.round(draw), conf: Math.min(95, 60 + Math.round(diff * 0.3)) };
+  const pD = Math.round(draw);
+  const pB = 100 - pD - pA;
+
+  let prediction = "Draw";
+
+  if (pA > pB && pA > pD) {
+    prediction = "Home Win";
+  } else if (pB > pA && pB > pD) {
+    prediction = "Away Win";
+  }
+
+  return {
+    pA,
+    pB,
+    pD,
+    conf: Math.min(95, 60 + Math.round(diff * 0.3)),
+    prediction,
+    source: "local-fallback"
+  };
 }
 
-// Uncomment and adapt this to call your real backend instead:
-// async function calcProb(cA, cB) {
-//   const res = await fetch("https://your-api.com/predict", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ team_a: cA, team_b: cB }),
-//   });
-//   return res.json(); // expects { pA, pB, pD, conf }
-// }
+async function calcProb(cA, cB) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        home_team: T[cA].name,
+        away_team: T[cB].name
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    const homeWin = data.probabilities?.["Home Win"] || 0;
+    const draw = data.probabilities?.["Draw"] || 0;
+    const awayWin = data.probabilities?.["Away Win"] || 0;
+
+    return {
+      pA: Math.round(homeWin * 100),
+      pD: Math.round(draw * 100),
+      pB: Math.round(awayWin * 100),
+      conf: Math.round(Math.max(homeWin, draw, awayWin) * 100),
+      prediction: data.prediction,
+      source: "api"
+    };
+  } catch (error) {
+    console.warn(
+      `Falling back to local probabilities for ${T[cA].name} vs ${T[cB].name}`,
+      error
+    );
+
+    return calcProbLocal(cA, cB);
+  }
+}
 
 function getH2H(cA, cB) {
   const diff = T[cA].str - T[cB].str;
   const wA = Math.round(3 + Math.max(0, diff / 10));
   const wB = Math.round(3 + Math.max(0, -diff / 10));
   const d = Math.round(2 + Math.random());
+
   return { wA, wB, d };
 }
 
-function simMatch(cA, cB) {
-  const r = calcProb(cA, cB);
+async function simulateMatchResult(cA, cB, allowDraw = true) {
+  const probabilities = await calcProb(cA, cB);
   const rand = Math.random() * 100;
-  if (rand < r.pA) return cA;
-  if (rand < r.pA + r.pD) return Math.random() < 0.5 ? cA : cB;
-  return cB;
+
+  let outcome;
+
+  if (rand < probabilities.pA) {
+    outcome = "Home Win";
+  } else if (rand < probabilities.pA + probabilities.pD) {
+    outcome = "Draw";
+  } else {
+    outcome = "Away Win";
+  }
+
+  let winner = null;
+
+  if (outcome === "Home Win") {
+    winner = cA;
+  } else if (outcome === "Away Win") {
+    winner = cB;
+  } else if (!allowDraw) {
+    winner = Math.random() < 0.5 ? cA : cB;
+  }
+
+  return {
+    home: cA,
+    away: cB,
+    outcome,
+    winner,
+    probabilities
+  };
+}
+
+async function simMatch(cA, cB) {
+  const match = await simulateMatchResult(cA, cB, false);
+
+  return match.winner;
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -113,7 +196,7 @@ const css = `
   .tab-btn.active { color: #c9a227; border-bottom-color: #c9a227; }
   .tab-btn:hover:not(.active) { color: #7a8fa6; }
   .slot { background: #0d1525; border: 1px dashed #1e2d45; border-radius: 6px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; min-height: 50px; cursor: pointer; transition: all .3s; }
-  .slot.filled-a { border: 1px solid #22c55e; }
+  .slot.filled-a { border: 1px solid #c9a227; }
   .slot.filled-b { border: 1px solid #3a7bd5; }
   .slot-flag { font-size: 22px; min-width: 26px; }
   .slot-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 1px; }
@@ -190,7 +273,7 @@ function WorldMap({ selA, selB, onSelect }) {
         .attr("fill", d => {
           const code = ISO[+d.id];
           if (!code) return "#1a2540";
-          if (code === selA) return "#4ade80";
+          if (code === selA) return "#f0c84a";
           if (code === selB) return "#6daaf0";
           return "#c9a227";
         })
@@ -212,7 +295,7 @@ function WorldMap({ selA, selB, onSelect }) {
           setTooltip(t => ({ ...t, visible: false }));
           const code = ISO[+d.id];
           if (!code) return;
-          if (code === selA) { d3.select(this).attr("fill", "#4ade80"); return; }
+          if (code === selA) { d3.select(this).attr("fill", "#f0c84a"); return; }
           if (code === selB) { d3.select(this).attr("fill", "#6daaf0"); return; }
           d3.select(this).attr("fill", "#c9a227");
         })
@@ -240,14 +323,20 @@ function DuelTab({ selA, selB, onClearA, onClearB, onSelectFromRanking }) {
   const [state, setState] = useState("idle"); // idle | loading | done
   const [result, setResult] = useState(null);
 
-  const runPred = () => {
-    setState("loading");
-    setTimeout(() => {
-      const r = calcProb(selA, selB);
+  const runPred = async () => {
+    try {
+      setState("loading");
+
+      const r = await calcProb(selA, selB);
       const h = getH2H(selA, selB);
+
       setResult({ r, h });
       setState("done");
-    }, 1100);
+    } catch (error) {
+      console.error(error);
+      alert("Could not run prediction. Check the FastAPI server.");
+      setState("idle");
+    }
   };
 
   const reset = () => { onClearA(); onClearB(); setState("idle"); setResult(null); };
@@ -333,75 +422,211 @@ function DuelTab({ selA, selB, onClearA, onClearB, onSelectFromRanking }) {
   );
 }
 
+async function simulateGroup(groupTeams) {
+  const table = {};
+
+  groupTeams.forEach(team => {
+    table[team] = {
+      pts: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0
+    };
+  });
+
+  const matches = [];
+
+  for (let i = 0; i < groupTeams.length; i++) {
+    for (let j = i + 1; j < groupTeams.length; j++) {
+      const home = groupTeams[i];
+      const away = groupTeams[j];
+
+      const match = await simulateMatchResult(home, away, true);
+
+      matches.push(match);
+
+      if (match.outcome === "Home Win") {
+        table[home].pts += 3;
+        table[home].wins += 1;
+        table[away].losses += 1;
+      } else if (match.outcome === "Away Win") {
+        table[away].pts += 3;
+        table[away].wins += 1;
+        table[home].losses += 1;
+      } else {
+        table[home].pts += 1;
+        table[away].pts += 1;
+        table[home].draws += 1;
+        table[away].draws += 1;
+      }
+    }
+  }
+
+  const ranking = Object.entries(table)
+    .sort((a, b) => {
+      const statsA = a[1];
+      const statsB = b[1];
+
+      if (statsB.pts !== statsA.pts) {
+        return statsB.pts - statsA.pts;
+      }
+
+      if (statsB.wins !== statsA.wins) {
+        return statsB.wins - statsA.wins;
+      }
+
+      return T[b[0]].str - T[a[0]].str;
+    })
+    .map(([team, stats]) => ({
+      team,
+      ...stats
+    }));
+
+  return {
+    ranking,
+    matches,
+    qualified: [
+      ranking[0].team,
+      ranking[1].team
+    ],
+    thirdPlace: ranking[2]
+  };
+}
+
 // ─── Bracket Tab ──────────────────────────────────────────────────────────────
 function BracketTab() {
   const [bracket, setBracket] = useState(null);
   const [state, setState] = useState("idle");
   const [error, setError] = useState(null);
 
+  const simulateKnockoutRound = async (matches) => {
+    const winners = await Promise.all(
+      matches.map(match => simMatch(match[0], match[1]))
+    );
+
+    return winners;
+  };
+
+  const buildNextRound = (winners) => {
+    const matches = [];
+
+    for (let i = 0; i < winners.length; i += 2) {
+      matches.push([
+        winners[i],
+        winners[i + 1]
+      ]);
+    }
+
+    return matches;
+  };
+
   const simulate = async () => {
     try {
       setState("loading");
       setError(null);
+      setBracket(null);
 
-      const top16 = Object.keys(T)
-        .sort((a, b) => T[b].str - T[a].str)
-        .slice(0, 16);
+      const groupResults = {};
+      const qualifiedTeams = [];
+      const thirdPlacedTeams = [];
 
-      const r16 = [], qf = [], sf = [], fin = [];
+      for (const [groupName, teams] of Object.entries(GROUPS)) {
+        const result = await simulateGroup(teams);
 
-      for (let i = 0; i < 16; i += 2) {
-        r16.push([top16[i], top16[i + 1]]);
+        groupResults[groupName] = result;
+        qualifiedTeams.push(...result.qualified);
+        thirdPlacedTeams.push(result.thirdPlace);
       }
 
-      const r16w = await Promise.all(
-        r16.map(m => simMatch(m[0], m[1]))
-      );
+      const bestThirds = thirdPlacedTeams
+        .sort((a, b) => {
+          if (b.pts !== a.pts) {
+            return b.pts - a.pts;
+          }
 
-      for (let i = 0; i < 8; i += 2) {
-        qf.push([r16w[i], r16w[i + 1]]);
+          if (b.wins !== a.wins) {
+            return b.wins - a.wins;
+          }
+
+          return T[b.team].str - T[a.team].str;
+        })
+        .slice(0, 8)
+        .map(team => team.team);
+
+      const round32Teams = [
+        ...qualifiedTeams,
+        ...bestThirds
+      ];
+
+      const round32 = [];
+
+      for (let i = 0; i < 16; i++) {
+        round32.push([
+          round32Teams[i],
+          round32Teams[31 - i]
+        ]);
       }
 
-      const qfw = await Promise.all(
-        qf.map(m => simMatch(m[0], m[1]))
-      );
+      const round32Winners = await simulateKnockoutRound(round32);
 
-      for (let i = 0; i < 4; i += 2) {
-        sf.push([qfw[i], qfw[i + 1]]);
-      }
+      const round16 = buildNextRound(round32Winners);
+      const round16Winners = await simulateKnockoutRound(round16);
 
-      const sfw = await Promise.all(
-        sf.map(m => simMatch(m[0], m[1]))
-      );
+      const quarterfinals = buildNextRound(round16Winners);
+      const quarterfinalWinners = await simulateKnockoutRound(quarterfinals);
 
-      fin.push([sfw[0], sfw[1]]);
+      const semifinals = buildNextRound(quarterfinalWinners);
+      const semifinalWinners = await simulateKnockoutRound(semifinals);
 
-      const champion = await simMatch(sfw[0], sfw[1]);
+      const final = buildNextRound(semifinalWinners);
+      const champion = await simMatch(final[0][0], final[0][1]);
 
       setBracket({
-        r16,
-        r16w,
-        qf,
-        qfw,
-        sf,
-        sfw,
-        fin,
+        groupResults,
+        round32,
+        round32Winners,
+        round16,
+        round16Winners,
+        quarterfinals,
+        quarterfinalWinners,
+        semifinals,
+        semifinalWinners,
+        final,
         champion
       });
 
       setState("done");
     } catch (err) {
-      console.error(err);
-      setError("Could not run tournament simulation. Check FastAPI server.");
-      setState("idle");
-    }
+  console.error("Tournament simulation error:", err);
+
+  setError(
+    err?.message || "Could not run tournament simulation."
+  );
+
+  setState("idle");
+}
   };
+
+  const GroupTable = ({ groupName, result }) => (
+    <>
+      <div className="brnd-lbl">GROUP {groupName}</div>
+
+      {result.ranking.map((row, index) => (
+        <div className="rank-item" key={row.team}>
+          <span className="rnum">{index + 1}</span>
+          <span className="rflag">{T[row.team].flag}</span>
+          <span className="rname">{T[row.team].name.toUpperCase()}</span>
+          <span className="rpct">{row.pts} pts</span>
+        </div>
+      ))}
+    </>
+  );
 
   const Round = ({ label, matches, winners }) => (
     <>
       <div className="brnd-lbl">{label}</div>
       {matches.map((m, i) => (
-        <div className="bm" key={i}>
+        <div className="bm" key={`${label}-${i}`}>
           <div className={`bt ${winners[i] === m[0] ? "winner" : "loser"}`}>
             <span>{T[m[0]].flag}</span><span>{T[m[0]].name.toUpperCase()}</span>
           </div>
@@ -418,41 +643,76 @@ function BracketTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div className="sec-title">KNOCKOUT SIMULATOR</div>
+      <div className="sec-title">2026 WORLD CUP SIMULATION</div>
 
       <button
         className="action-btn"
         onClick={simulate}
         disabled={state === "loading"}
       >
-        {state === "loading" ? "SIMULATING..." : "SIMULATE FULL TOURNAMENT ↗"}
+        {state === "loading" ? "SIMULATING..." : "SIMULATE WORLD CUP ↗"}
       </button>
 
       {!bracket && state !== "loading" && !error && (
         <div className="result-empty">
-          Click simulate to run<br />the full knockout stage
+          Simulate the 2026<br />World Cup from groups
         </div>
       )}
 
       {state === "loading" && (
         <div className="result-empty">
-          Running model-powered<br />tournament simulation...
+          Running group stage<br />and knockout simulation...
         </div>
       )}
 
       {error && (
-        <div className="error-box">
-          TOURNAMENT API ERROR<br />
-          CHECK FASTAPI SERVER
-        </div>
-      )}
+  <div className="result-empty">
+    TOURNAMENT ERROR<br />
+    {error}
+  </div>
+)}
 
       {bracket && (
         <>
-          <Round label="ROUND OF 16" matches={bracket.r16} winners={bracket.r16w} />
-          <Round label="QUARTERFINALS" matches={bracket.qf} winners={bracket.qfw} />
-          <Round label="SEMIFINALS" matches={bracket.sf} winners={bracket.sfw} />
-          <Round label="FINAL" matches={bracket.fin} winners={[bracket.champion]} />
+          <div className="sec-title">GROUP STAGE</div>
+
+          {Object.entries(bracket.groupResults).map(([groupName, result]) => (
+            <GroupTable
+              key={groupName}
+              groupName={groupName}
+              result={result}
+            />
+          ))}
+
+          <Round
+            label="ROUND OF 32"
+            matches={bracket.round32}
+            winners={bracket.round32Winners}
+          />
+
+          <Round
+            label="ROUND OF 16"
+            matches={bracket.round16}
+            winners={bracket.round16Winners}
+          />
+
+          <Round
+            label="QUARTERFINALS"
+            matches={bracket.quarterfinals}
+            winners={bracket.quarterfinalWinners}
+          />
+
+          <Round
+            label="SEMIFINALS"
+            matches={bracket.semifinals}
+            winners={bracket.semifinalWinners}
+          />
+
+          <Round
+            label="FINAL"
+            matches={bracket.final}
+            winners={[bracket.champion]}
+          />
 
           <div className="champion-box">
             <div className="champion-lbl">WORLD CHAMPION</div>
