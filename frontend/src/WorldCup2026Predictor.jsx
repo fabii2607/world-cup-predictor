@@ -8,24 +8,23 @@ const T = {
   URU:{name:"Uruguay",flag:"🇺🇾",str:79},ECU:{name:"Ecuador",flag:"🇪🇨",str:68},PER:{name:"Peru",flag:"🇵🇪",str:65},
   CHI:{name:"Chile",flag:"🇨🇱",str:67},VEN:{name:"Venezuela",flag:"🇻🇪",str:63},PAR:{name:"Paraguay",flag:"🇵🇾",str:62},
   BOL:{name:"Bolivia",flag:"🇧🇴",str:55},GER:{name:"Germany",flag:"🇩🇪",str:88},FRA:{name:"France",flag:"🇫🇷",str:92},
-  ESP:{name:"Spain",flag:"🇪🇸",str:89},ENG:{name:"England",flag:"🇬🇧",str:87},POR:{name:"Portugal",flag:"🇵🇹",str:86},
+  ESP:{name:"Spain",flag:"🇪🇸",str:89},ENG:{name:"England",flag:"EN",str:87},POR:{name:"Portugal",flag:"🇵🇹",str:86},
   NED:{name:"Netherlands",flag:"🇳🇱",str:83},BEL:{name:"Belgium",flag:"🇧🇪",str:80},ITA:{name:"Italy",flag:"🇮🇹",str:81},
   SUI:{name:"Switzerland",flag:"🇨🇭",str:76},AUT:{name:"Austria",flag:"🇦🇹",str:74},CRO:{name:"Croatia",flag:"🇭🇷",str:77},
   DEN:{name:"Denmark",flag:"🇩🇰",str:75},SWE:{name:"Sweden",flag:"🇸🇪",str:73},POL:{name:"Poland",flag:"🇵🇱",str:72},
-  UKR:{name:"Ukraine",flag:"🇺🇦",str:70},SRB:{name:"Serbia",flag:"🇷🇸",str:71},SCO:{name:"Scotland",flag:"🇬🇧",str:68},
+  UKR:{name:"Ukraine",flag:"🇺🇦",str:70},SRB:{name:"Serbia",flag:"🇷🇸",str:71},SCO:{name:"Scotland",flag:"SC",str:68},
   MAR:{name:"Morocco",flag:"🇲🇦",str:79},SEN:{name:"Senegal",flag:"🇸🇳",str:74},NGA:{name:"Nigeria",flag:"🇳🇬",str:71},
   EGY:{name:"Egypt",flag:"🇪🇬",str:68},RSA:{name:"South Africa",flag:"🇿🇦",str:62},CMR:{name:"Cameroon",flag:"🇨🇲",str:65},
   TUN:{name:"Tunisia",flag:"🇹🇳",str:64},ALG:{name:"Algeria",flag:"🇩🇿",str:67},JPN:{name:"Japan",flag:"🇯🇵",str:78},
   KOR:{name:"South Korea",flag:"🇰🇷",str:74},AUS:{name:"Australia",flag:"🇦🇺",str:69},IRN:{name:"Iran",flag:"🇮🇷",str:67},
   SAU:{name:"Saudi Arabia",flag:"🇸🇦",str:65},QAT:{name:"Qatar",flag:"🇶🇦",str:61},NZL:{name:"New Zealand",flag:"🇳🇿",str:59},
   CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73},HUN:{name:"Hungary",flag:"🇭🇺",str:68},
-  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73}, HUN:{name:"Hungary",flag:"🇭🇺",str:68}, 
   BIH:{name:"Bosnia and Herzegovina",flag:"🇧🇦",str:70},HTI:{name:"Haiti",flag:"🇭🇹",str:58},CZE:{name:"Czech Republic",flag:"🇨🇿",str:73},
   CUW:{name:"Curacao",flag:"🇨🇼",str:60},CIV:{name:"Ivory Coast",flag:"🇨🇮",str:72},CPV:{name:"Cape Verde",flag:"🇨🇻",str:65},
-  NOR:{name:"Norway",flag:"🇳🇴",str:78},JOR:{name:"Jordan",flag:"🇯🇴",str:62},COD:{name:"DR Congo",flag:"🇨🇩",str:67},
-  UZB:{name:"Uzbekistan",flag:"🇺🇿",str:69},GHA:{name:"Ghana",flag:"🇬🇭",str:68},PAN:{name:"Panama",flag:"🇵🇦",str:64}
-};
+ NOR:{name:"Norway",flag:"🇳🇴",str:78},JOR:{name:"Jordan",flag:"🇯🇴",str:62},COD:{name:"DR Congo",flag:"🇨🇩",str:67},
+ UZB:{name:"Uzbekistan",flag:"🇺🇿",str:69},GHA:{name:"Ghana",flag:"🇬🇭",str:68},PAN:{name:"Panama",flag:"🇵🇦",str:64}
 
+};
 const ISO = {
   840:"USA",484:"MEX",124:"CAN",76:"BRA",32:"ARG",170:"COL",858:"URU",218:"ECU",604:"PER",152:"CHI",
   862:"VEN",600:"PAR",68:"BOL",276:"GER",250:"FRA",724:"ESP",826:"ENG",620:"POR",528:"NED",56:"BEL",
@@ -49,9 +48,6 @@ const GROUPS = {
   L: ["ENG", "CRO", "GHA", "PAN"]
 };
 
-
-console.log("Teams in GROUPS:", groupTeamCodes);
-console.log("Missing from T:", missingFromT);
 // ─── Prediction logic ────────────────────────────────────────────────────────
 // Replace this function with a real API call to your backend.
 // Your API should receive { team_a: "BRA", team_b: "ARG" }
@@ -196,7 +192,7 @@ const css = `
   .tab-btn.active { color: #c9a227; border-bottom-color: #c9a227; }
   .tab-btn:hover:not(.active) { color: #7a8fa6; }
   .slot { background: #0d1525; border: 1px dashed #1e2d45; border-radius: 6px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; min-height: 50px; cursor: pointer; transition: all .3s; }
-  .slot.filled-a { border: 1px solid #c9a227; }
+  .slot.filled-a { border: 1px solid #12883d; }
   .slot.filled-b { border: 1px solid #3a7bd5; }
   .slot-flag { font-size: 22px; min-width: 26px; }
   .slot-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 1px; }
@@ -273,7 +269,7 @@ function WorldMap({ selA, selB, onSelect }) {
         .attr("fill", d => {
           const code = ISO[+d.id];
           if (!code) return "#1a2540";
-          if (code === selA) return "#f0c84a";
+          if (code === selA) return "#1ada60";
           if (code === selB) return "#6daaf0";
           return "#c9a227";
         })
@@ -295,7 +291,7 @@ function WorldMap({ selA, selB, onSelect }) {
           setTooltip(t => ({ ...t, visible: false }));
           const code = ISO[+d.id];
           if (!code) return;
-          if (code === selA) { d3.select(this).attr("fill", "#f0c84a"); return; }
+          if (code === selA) { d3.select(this).attr("fill", "#1ada60"); return; }
           if (code === selB) { d3.select(this).attr("fill", "#6daaf0"); return; }
           d3.select(this).attr("fill", "#c9a227");
         })
@@ -782,7 +778,7 @@ export default function App() {
           <WorldMap selA={selA} selB={selB} onSelect={selectCountry} />
           <div className="wc-panel">
             <div className="tabs">
-              {["duel", "bracket", "ranking"].map(tab => (
+              {["duel", "bracket", "teams"].map(tab => (
                 <button key={tab} className={`tab-btn ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>
                   {tab.toUpperCase()}
                 </button>
@@ -796,7 +792,7 @@ export default function App() {
               />
             )}
             {activeTab === "bracket" && <BracketTab />}
-            {activeTab === "ranking" && <RankingTab onSelect={selectFromRanking} />}
+            {activeTab === "teams" && <RankingTab onSelect={selectFromRanking} />}
           </div>
         </div>
       </div>
