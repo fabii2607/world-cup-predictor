@@ -763,39 +763,51 @@ export default function App() {
     setActiveTab("duel");
   };
 
-  return (
-    <>
-      <style>{css}</style>
-      <div className="wc-app">
-        <div className="wc-hdr">
-          <div>
-            <div className="wc-title">⚽ World Cup 2026 Predictor</div>
-            <div className="wc-sub">SELECT TWO COUNTRIES ON THE MAP TO PREDICT THE MATCH</div>
-          </div>
-          <div className="wc-badge">48 TEAMS</div>
+ return (
+  <>
+    <style>{css}</style>
+    <div className="wc-app">
+      <div className="wc-hdr">
+        <div>
+          <div className="wc-title">⚽ World Cup 2026 Predictor</div>
+          <div className="wc-sub">SELECT TWO COUNTRIES ON THE MAP TO PREDICT THE MATCH</div>
         </div>
-        <div className="wc-body">
-          <WorldMap selA={selA} selB={selB} onSelect={selectCountry} />
-          <div className="wc-panel">
-            <div className="tabs">
-              {["duel", "bracket", "teams"].map(tab => (
-                <button key={tab} className={`tab-btn ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>
-                  {tab.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            {activeTab === "duel" && (
-              <DuelTab
-                selA={selA} selB={selB}
-                onClearA={() => setSelA(null)}
-                onClearB={() => setSelB(null)}
-              />
-            )}
-            {activeTab === "bracket" && <BracketTab />}
-            {activeTab === "teams" && <RankingTab onSelect={selectFromRanking} />}
+        <div className="wc-badge">48 TEAMS</div>
+      </div>
+
+      <div className="wc-body">
+        <WorldMap selA={selA} selB={selB} onSelect={selectCountry} />
+        <div className="wc-panel">
+          <div className="tabs">
+            {["duel", "bracket", "teams"].map(tab => (
+              <button
+                key={tab}
+                className={`tab-btn ${activeTab === tab ? "active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.toUpperCase()}
+              </button>
+            ))}
           </div>
+
+          {activeTab === "duel" && (
+            <DuelTab
+              selA={selA}
+              selB={selB}
+              onClearA={() => setSelA(null)}
+              onClearB={() => setSelB(null)}
+            />
+          )}
+
+          {activeTab === "bracket" && <BracketTab />}
+          {activeTab === "teams" && <RankingTab onSelect={selectFromRanking} />}
         </div>
       </div>
-    </>
-  );
+
+      <div className="wc-footer">
+        Created by <span>Fabiana Luizon Martins Campos</span>
+      </div>
+    </div>
+  </>
+);
 }
