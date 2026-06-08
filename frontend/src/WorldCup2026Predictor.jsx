@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const API_URL = "http://127.0.0.1:8000/predict";
+const API_URL = "https://world-cup-predictor-api.onrender.com/predict";
 
 const T = {
   USA:{name:"United States",flag:"🇺🇸",str:82},MEX:{name:"Mexico",flag:"🇲🇽",str:75},CAN:{name:"Canada",flag:"🇨🇦",str:72},
