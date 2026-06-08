@@ -1,24 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 
-const API_URL = "http://127.0.0.1:8000/predict";
-
 const T = {
   USA:{name:"United States",flag:"🇺🇸",str:82},MEX:{name:"Mexico",flag:"🇲🇽",str:75},CAN:{name:"Canada",flag:"🇨🇦",str:72},
   BRA:{name:"Brazil",flag:"🇧🇷",str:91},ARG:{name:"Argentina",flag:"🇦🇷",str:94},COL:{name:"Colombia",flag:"🇨🇴",str:78},
   URU:{name:"Uruguay",flag:"🇺🇾",str:79},ECU:{name:"Ecuador",flag:"🇪🇨",str:68},PER:{name:"Peru",flag:"🇵🇪",str:65},
   CHI:{name:"Chile",flag:"🇨🇱",str:67},VEN:{name:"Venezuela",flag:"🇻🇪",str:63},PAR:{name:"Paraguay",flag:"🇵🇾",str:62},
   BOL:{name:"Bolivia",flag:"🇧🇴",str:55},GER:{name:"Germany",flag:"🇩🇪",str:88},FRA:{name:"France",flag:"🇫🇷",str:92},
-  ESP:{name:"Spain",flag:"🇪🇸",str:89},ENG:{name:"England",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",str:87},POR:{name:"Portugal",flag:"🇵🇹",str:86},
+  ESP:{name:"Spain",flag:"🇪🇸",str:89},ENG:{name:"England",flag:"🇬🇧",str:87},POR:{name:"Portugal",flag:"🇵🇹",str:86},
   NED:{name:"Netherlands",flag:"🇳🇱",str:83},BEL:{name:"Belgium",flag:"🇧🇪",str:80},ITA:{name:"Italy",flag:"🇮🇹",str:81},
   SUI:{name:"Switzerland",flag:"🇨🇭",str:76},AUT:{name:"Austria",flag:"🇦🇹",str:74},CRO:{name:"Croatia",flag:"🇭🇷",str:77},
   DEN:{name:"Denmark",flag:"🇩🇰",str:75},SWE:{name:"Sweden",flag:"🇸🇪",str:73},POL:{name:"Poland",flag:"🇵🇱",str:72},
-  UKR:{name:"Ukraine",flag:"🇺🇦",str:70},SRB:{name:"Serbia",flag:"🇷🇸",str:71},SCO:{name:"Scotland",flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",str:68},
+  UKR:{name:"Ukraine",flag:"🇺🇦",str:70},SRB:{name:"Serbia",flag:"🇷🇸",str:71},SCO:{name:"Scotland",flag:"🇬🇧",str:68},
   MAR:{name:"Morocco",flag:"🇲🇦",str:79},SEN:{name:"Senegal",flag:"🇸🇳",str:74},NGA:{name:"Nigeria",flag:"🇳🇬",str:71},
   EGY:{name:"Egypt",flag:"🇪🇬",str:68},RSA:{name:"South Africa",flag:"🇿🇦",str:62},CMR:{name:"Cameroon",flag:"🇨🇲",str:65},
   TUN:{name:"Tunisia",flag:"🇹🇳",str:64},ALG:{name:"Algeria",flag:"🇩🇿",str:67},JPN:{name:"Japan",flag:"🇯🇵",str:78},
   KOR:{name:"South Korea",flag:"🇰🇷",str:74},AUS:{name:"Australia",flag:"🇦🇺",str:69},IRN:{name:"Iran",flag:"🇮🇷",str:67},
   SAU:{name:"Saudi Arabia",flag:"🇸🇦",str:65},QAT:{name:"Qatar",flag:"🇶🇦",str:61},NZL:{name:"New Zealand",flag:"🇳🇿",str:59},
-  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73},HUN:{name:"Hungary",flag:"🇭🇺",str:68}
+  CHN:{name:"China",flag:"🇨🇳",str:63},TUR:{name:"Turkey",flag:"🇹🇷",str:73},HUN:{name:"Hungary",flag:"🇭🇺",str:68}, BIH:{name:"Bosnia and Herzegovina",flag:"🇧🇦",str:70},
+HTI:{name:"Haiti",flag:"🇭🇹",str:58},
+CZE:{name:"Czech Republic",flag:"🇨🇿",str:73},
+CUW:{name:"Curacao",flag:"🇨🇼",str:60},
+CIV:{name:"Ivory Coast",flag:"🇨🇮",str:72},
+CPV:{name:"Cape Verde",flag:"🇨🇻",str:65},
+NOR:{name:"Norway",flag:"🇳🇴",str:78},
+JOR:{name:"Jordan",flag:"🇯🇴",str:62},
+COD:{name:"DR Congo",flag:"🇨🇩",str:67},
+UZB:{name:"Uzbekistan",flag:"🇺🇿",str:69},
+GHA:{name:"Ghana",flag:"🇬🇭",str:68},
+PAN:{name:"Panama",flag:"🇵🇦",str:64}
 };
 
 const ISO = {
@@ -29,41 +38,26 @@ const ISO = {
   392:"JPN",410:"KOR",36:"AUS",364:"IRN",682:"SAU",634:"QAT",554:"NZL",156:"CHN",792:"TUR",348:"HUN"
 };
 
-async function calcProb(cA, cB) {
-  const homeTeam = T[cA].name;
-  const awayTeam = T[cB].name;
+const GROUPS = {
+  A: ["MEX", "RSA", "KOR", "CZE"],
+  B: ["CAN", "BIH", "QAT", "SUI"],
+  C: ["BRA", "MAR", "HTI", "SCO"],
+  D: ["USA", "PAR", "AUS", "TUR"],
+  E: ["GER", "CUW", "CIV", "ECU"],
+  F: ["NED", "JPN", "SWE", "TUN"],
+  G: ["BEL", "EGY", "IRN", "NZL"],
+  H: ["ESP", "CPV", "SAU", "URU"],
+  I: ["FRA", "SEN", "BOL", "NOR"],
+  J: ["ARG", "ALG", "AUT", "JOR"],
+  K: ["POR", "COD", "UZB", "COL"],
+  L: ["ENG", "CRO", "GHA", "PAN"]
+};
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      home_team: homeTeam,
-      away_team: awayTeam
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Prediction request failed");
-  }
-
-  const data = await response.json();
-
-  const homeWin = data.probabilities["Home Win"] || 0;
-  const awayWin = data.probabilities["Away Win"] || 0;
-  const draw = data.probabilities["Draw"] || 0;
-
-  return {
-    pA: Math.round(homeWin * 100),
-    pB: Math.round(awayWin * 100),
-    pD: Math.round(draw * 100),
-    conf: Math.round(Math.max(homeWin, awayWin, draw) * 100),
-    prediction: data.prediction
-  };
-}
-
-function calcProbLocal(cA, cB) {
+// ─── Prediction logic ────────────────────────────────────────────────────────
+// Replace this function with a real API call to your backend.
+// Your API should receive { team_a: "BRA", team_b: "ARG" }
+// and return { pA: number, pB: number, pD: number, conf: number }
+function calcProb(cA, cB) {
   const a = T[cA], b = T[cB], tot = a.str + b.str;
   const rawA = (a.str / tot) * 100;
   const diff = Math.abs(a.str - b.str);
@@ -71,14 +65,18 @@ function calcProbLocal(cA, cB) {
   const rem = 100 - draw;
   const pA = Math.round((rawA / 100) * rem);
   const pB = 100 - Math.round(draw) - pA;
-
-  return {
-    pA,
-    pB,
-    pD: Math.round(draw),
-    conf: Math.min(95, 60 + Math.round(diff * 0.3))
-  };
+  return { pA, pB, pD: Math.round(draw), conf: Math.min(95, 60 + Math.round(diff * 0.3)) };
 }
+
+// Uncomment and adapt this to call your real backend instead:
+// async function calcProb(cA, cB) {
+//   const res = await fetch("https://your-api.com/predict", {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ team_a: cA, team_b: cB }),
+//   });
+//   return res.json(); // expects { pA, pB, pD, conf }
+// }
 
 function getH2H(cA, cB) {
   const diff = T[cA].str - T[cB].str;
@@ -89,15 +87,14 @@ function getH2H(cA, cB) {
 }
 
 function simMatch(cA, cB) {
-  const r = calcProbLocal(cA, cB);
+  const r = calcProb(cA, cB);
   const rand = Math.random() * 100;
-
   if (rand < r.pA) return cA;
   if (rand < r.pA + r.pD) return Math.random() < 0.5 ? cA : cB;
-
   return cB;
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap');
   .wc-app * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -126,7 +123,6 @@ const css = `
   .pred-btn:hover { opacity: .9; }
   .pred-btn:disabled { background: #1e2d45; color: #3d5270; cursor: default; }
   .result-empty { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #3d5270; text-align: center; padding: 16px 0; letter-spacing: 1px; line-height: 2; }
-  .error-box { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #ff8080; text-align: center; padding: 12px 0; letter-spacing: 1px; line-height: 1.7; border: 1px solid #633; border-radius: 6px; }
   .prow { display: flex; flex-direction: column; gap: 4px; }
   .pname { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
   .ppct { font-family: 'Share Tech Mono', monospace; font-size: 12px; }
@@ -159,19 +155,19 @@ const css = `
   .tooltip { position: absolute; background: #1a2540; border: 1px solid #c9a227; color: #e8dcc8; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; pointer-events: none; z-index: 10; white-space: nowrap; }
 `;
 
+// ─── Map Component ────────────────────────────────────────────────────────────
 function WorldMap({ selA, selB, onSelect }) {
   const svgRef = useRef(null);
   const [tooltip, setTooltip] = useState({ visible: false, text: "", x: 0, y: 0 });
 
   useEffect(() => {
     let d3, topojson;
-
     async function loadMap() {
+      // Load D3 and TopoJSON dynamically
       const [d3Module, topoModule] = await Promise.all([
         import("https://cdn.jsdelivr.net/npm/d3@7/+esm"),
         import("https://cdn.jsdelivr.net/npm/topojson-client@3/+esm"),
       ]);
-
       d3 = d3Module;
       topojson = topoModule;
 
@@ -198,44 +194,26 @@ function WorldMap({ selA, selB, onSelect }) {
           if (code === selB) return "#6daaf0";
           return "#c9a227";
         })
-        .attr("stroke", "#0a0e1a")
-        .attr("strokeWidth", 0.5)
+        .attr("stroke", "#0a0e1a").attr("stroke-width", 0.5)
         .style("cursor", d => ISO[+d.id] ? "pointer" : "default")
+        .style("transition", "fill .2s")
         .on("mouseover", function (ev, d) {
           const code = ISO[+d.id];
           if (!code) return;
-
           const rect = svgRef.current.closest(".map-area").getBoundingClientRect();
-
-          setTooltip({
-            visible: true,
-            text: `${T[code].flag} ${T[code].name}`,
-            x: ev.clientX - rect.left + 10,
-            y: ev.clientY - rect.top - 30
-          });
-
-          if (code !== selA && code !== selB) {
-            d3.select(this).attr("fill", "#e8b830");
-          }
+          setTooltip({ visible: true, text: `${T[code].flag} ${T[code].name}`, x: ev.clientX - rect.left + 10, y: ev.clientY - rect.top - 30 });
+          if (code !== selA && code !== selB) d3.select(this).attr("fill", "#e8b830");
         })
         .on("mousemove", function (ev) {
           const rect = svgRef.current.closest(".map-area").getBoundingClientRect();
-
-          setTooltip(t => ({
-            ...t,
-            x: ev.clientX - rect.left + 10,
-            y: ev.clientY - rect.top - 30
-          }));
+          setTooltip(t => ({ ...t, x: ev.clientX - rect.left + 10, y: ev.clientY - rect.top - 30 }));
         })
         .on("mouseout", function (ev, d) {
           setTooltip(t => ({ ...t, visible: false }));
-
           const code = ISO[+d.id];
-
           if (!code) return;
-          if (code === selA) return d3.select(this).attr("fill", "#4ade80");
-          if (code === selB) return d3.select(this).attr("fill", "#6daaf0");
-
+          if (code === selA) { d3.select(this).attr("fill", "#4ade80"); return; }
+          if (code === selB) { d3.select(this).attr("fill", "#6daaf0"); return; }
           d3.select(this).attr("fill", "#c9a227");
         })
         .on("click", function (ev, d) {
@@ -243,78 +221,56 @@ function WorldMap({ selA, selB, onSelect }) {
           if (code) onSelect(code);
         });
     }
-
     loadMap();
-  }, [selA, selB, onSelect]);
+  }, [selA, selB]);
 
   return (
     <div className="map-area">
       <div className="map-lbl">▸ PARTICIPANT NATIONS — CLICK TO SELECT</div>
       <svg ref={svgRef} viewBox="0 0 900 420" style={{ width: "100%", height: 420, cursor: "pointer" }} />
       {tooltip.visible && (
-        <div className="tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
-          {tooltip.text}
-        </div>
+        <div className="tooltip" style={{ left: tooltip.x, top: tooltip.y }}>{tooltip.text}</div>
       )}
     </div>
   );
 }
 
-function DuelTab({ selA, selB, onClearA, onClearB }) {
-  const [state, setState] = useState("idle");
+// ─── Duel Tab ─────────────────────────────────────────────────────────────────
+function DuelTab({ selA, selB, onClearA, onClearB, onSelectFromRanking }) {
+  const [state, setState] = useState("idle"); // idle | loading | done
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
 
-  const runPred = async () => {
-    try {
-      setState("loading");
-      setError(null);
-
-      const r = await calcProb(selA, selB);
+  const runPred = () => {
+    setState("loading");
+    setTimeout(() => {
+      const r = calcProb(selA, selB);
       const h = getH2H(selA, selB);
-
       setResult({ r, h });
       setState("done");
-    } catch (err) {
-      console.error(err);
-      setError("Could not connect to prediction API.");
-      setState("idle");
-    }
+    }, 1100);
   };
 
-  const reset = () => {
-    onClearA();
-    onClearB();
-    setState("idle");
-    setResult(null);
-    setError(null);
-  };
+  const reset = () => { onClearA(); onClearB(); setState("idle"); setResult(null); };
 
   const share = () => {
     const tA = T[selA], tB = T[selB], r = result.r;
     const txt = `⚽ World Cup 2026 Prediction\n\n${tA.flag} ${tA.name} ${r.pA}% vs ${r.pB}% ${tB.name} ${tB.flag}\n\nPowered by my ML predictor`;
-
-    navigator.clipboard.writeText(txt)
-      .then(() => alert("Copied!"))
-      .catch(() => alert(txt));
+    navigator.clipboard.writeText(txt).then(() => alert("Copied!")).catch(() => alert(txt));
   };
 
   const tA = selA ? T[selA] : null;
   const tB = selB ? T[selB] : null;
-  const winA = result && result.r.pA >= result.r.pB;
+  const winA = result && result.r.pA > result.r.pB;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div className="sec-title">SELECT MATCHUP</div>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div className={`slot ${selA ? "filled-a" : ""}`} onClick={onClearA}>
           <span className="slot-flag">{tA ? tA.flag : "🌍"}</span>
           {tA ? <span className="slot-name">{tA.name.toUpperCase()}</span> : <span className="slot-empty">— click on map —</span>}
         </div>
-
         <div className="vs-div">VS</div>
-
         <div className={`slot ${selB ? "filled-b" : ""}`} onClick={onClearB}>
           <span className="slot-flag">{tB ? tB.flag : "🌍"}</span>
           {tB ? <span className="slot-name">{tB.name.toUpperCase()}</span> : <span className="slot-empty">— click on map —</span>}
@@ -329,21 +285,13 @@ function DuelTab({ selA, selB, onClearA, onClearB }) {
         <button className="pred-btn" onClick={reset}>RESET DUEL</button>
       )}
 
-      {error && (
-        <div className="error-box">
-          API CONNECTION ERROR<br />
-          CHECK FASTAPI SERVER
-        </div>
-      )}
-
-      {state === "idle" && !error && (
+      {state === "idle" && (
         <div className="result-empty">SELECT TWO<br />NATIONS TO<br />START ANALYSIS</div>
       )}
 
       {state === "done" && result && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div className="sec-title">WIN PROBABILITIES</div>
-
           {[
             { label: `${tA.flag} ${tA.name.toUpperCase()}`, pct: result.r.pA, cls: "bar-a", color: "#c9a227", fav: winA },
             { label: "DRAW", pct: result.r.pD, cls: "bar-d", color: "#7a8fa6", fav: false },
@@ -357,18 +305,14 @@ function DuelTab({ selA, selB, onClearA, onClearB }) {
                   {row.fav && <span className={`wbadge ${i === 0 ? "g" : "b"}`}>FAVORITE</span>}
                 </span>
               </div>
-
               <div className="pbar-bg">
                 <div className={`pbar ${row.cls}`} style={{ width: `${row.pct}%` }} />
               </div>
             </div>
           ))}
-
           <div className="conf-row">MODEL CONFIDENCE: {result.r.conf}%</div>
-          <div className="conf-row">PREDICTION: {result.r.prediction?.toUpperCase()}</div>
 
           <div className="sec-title" style={{ marginTop: 4 }}>HEAD TO HEAD (EST.)</div>
-
           <div className="h2h-row">
             <span className="h2h-lbl">WINS</span>
             <span className="h2h-val" style={{ color: "#c9a227" }}>{result.h.wA}</span>
@@ -377,13 +321,11 @@ function DuelTab({ selA, selB, onClearA, onClearB }) {
             <span className="h2h-lbl">WINS</span>
             <span className="h2h-val" style={{ color: "#3a7bd5" }}>{result.h.wB}</span>
           </div>
-
           <div className="h2h-row" style={{ border: "none" }}>
             <span className="h2h-lbl">{tA.name.toUpperCase()}</span>
             <span />
             <span className="h2h-lbl">{tB.name.toUpperCase()}</span>
           </div>
-
           <button className="action-btn" onClick={share}>COPY PREDICTION CARD ↗</button>
         </div>
       )}
@@ -391,30 +333,68 @@ function DuelTab({ selA, selB, onClearA, onClearB }) {
   );
 }
 
+// ─── Bracket Tab ──────────────────────────────────────────────────────────────
 function BracketTab() {
   const [bracket, setBracket] = useState(null);
+  const [state, setState] = useState("idle");
+  const [error, setError] = useState(null);
 
-  const simulate = () => {
-    const top16 = Object.keys(T).sort((a, b) => T[b].str - T[a].str).slice(0, 16);
-    const r16 = [], qf = [], sf = [], fin = [];
+  const simulate = async () => {
+    try {
+      setState("loading");
+      setError(null);
 
-    for (let i = 0; i < 16; i += 2) r16.push([top16[i], top16[i + 1]]);
+      const top16 = Object.keys(T)
+        .sort((a, b) => T[b].str - T[a].str)
+        .slice(0, 16);
 
-    const r16w = r16.map(m => simMatch(m[0], m[1]));
+      const r16 = [], qf = [], sf = [], fin = [];
 
-    for (let i = 0; i < 8; i += 2) qf.push([r16w[i], r16w[i + 1]]);
+      for (let i = 0; i < 16; i += 2) {
+        r16.push([top16[i], top16[i + 1]]);
+      }
 
-    const qfw = qf.map(m => simMatch(m[0], m[1]));
+      const r16w = await Promise.all(
+        r16.map(m => simMatch(m[0], m[1]))
+      );
 
-    for (let i = 0; i < 4; i += 2) sf.push([qfw[i], qfw[i + 1]]);
+      for (let i = 0; i < 8; i += 2) {
+        qf.push([r16w[i], r16w[i + 1]]);
+      }
 
-    const sfw = sf.map(m => simMatch(m[0], m[1]));
+      const qfw = await Promise.all(
+        qf.map(m => simMatch(m[0], m[1]))
+      );
 
-    fin.push([sfw[0], sfw[1]]);
+      for (let i = 0; i < 4; i += 2) {
+        sf.push([qfw[i], qfw[i + 1]]);
+      }
 
-    const champion = simMatch(sfw[0], sfw[1]);
+      const sfw = await Promise.all(
+        sf.map(m => simMatch(m[0], m[1]))
+      );
 
-    setBracket({ r16, r16w, qf, qfw, sf, sfw, fin, champion });
+      fin.push([sfw[0], sfw[1]]);
+
+      const champion = await simMatch(sfw[0], sfw[1]);
+
+      setBracket({
+        r16,
+        r16w,
+        qf,
+        qfw,
+        sf,
+        sfw,
+        fin,
+        champion
+      });
+
+      setState("done");
+    } catch (err) {
+      console.error(err);
+      setError("Could not run tournament simulation. Check FastAPI server.");
+      setState("idle");
+    }
   };
 
   const Round = ({ label, matches, winners }) => (
@@ -440,9 +420,32 @@ function BracketTab() {
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <div className="sec-title">KNOCKOUT SIMULATOR</div>
 
-      <button className="action-btn" onClick={simulate}>SIMULATE FULL TOURNAMENT ↗</button>
+      <button
+        className="action-btn"
+        onClick={simulate}
+        disabled={state === "loading"}
+      >
+        {state === "loading" ? "SIMULATING..." : "SIMULATE FULL TOURNAMENT ↗"}
+      </button>
 
-      {!bracket && <div className="result-empty">Click simulate to run<br />the full knockout stage</div>}
+      {!bracket && state !== "loading" && !error && (
+        <div className="result-empty">
+          Click simulate to run<br />the full knockout stage
+        </div>
+      )}
+
+      {state === "loading" && (
+        <div className="result-empty">
+          Running model-powered<br />tournament simulation...
+        </div>
+      )}
+
+      {error && (
+        <div className="error-box">
+          TOURNAMENT API ERROR<br />
+          CHECK FASTAPI SERVER
+        </div>
+      )}
 
       {bracket && (
         <>
@@ -453,23 +456,28 @@ function BracketTab() {
 
           <div className="champion-box">
             <div className="champion-lbl">WORLD CHAMPION</div>
-            <div className="champion-name">{T[bracket.champion].flag} {T[bracket.champion].name.toUpperCase()}</div>
+            <div className="champion-name">
+              {T[bracket.champion].flag} {T[bracket.champion].name.toUpperCase()}
+            </div>
           </div>
 
-          <button className="action-btn" onClick={simulate}>SIMULATE AGAIN ↗</button>
+          <button
+            className="action-btn"
+            onClick={simulate}
+            disabled={state === "loading"}
+          >
+            {state === "loading" ? "SIMULATING..." : "SIMULATE AGAIN ↗"}
+          </button>
         </>
       )}
     </div>
   );
 }
-
 function RankingTab({ onSelect }) {
   const sorted = Object.entries(T).sort((a, b) => b[1].str - a[1].str).slice(0, 12);
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <div className="sec-title">TOP TITLE CONTENDERS</div>
-
       {sorted.map(([code, t], i) => (
         <div className="rank-item" key={code} onClick={() => onSelect(code)}>
           <span className="rnum">{String(i + 1).padStart(2, "0")}</span>
@@ -482,19 +490,16 @@ function RankingTab({ onSelect }) {
   );
 }
 
-export default function WorldCup2026Predictor() {
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function App() {
   const [selA, setSelA] = useState(null);
   const [selB, setSelB] = useState(null);
   const [activeTab, setActiveTab] = useState("duel");
 
   const selectCountry = (code) => {
     if (selA === code || selB === code) return;
-
-    if (!selA) {
-      setSelA(code);
-    } else if (!selB) {
-      setSelB(code);
-    }
+    if (!selA) setSelA(code);
+    else if (!selB) setSelB(code);
   };
 
   const selectFromRanking = (code) => {
@@ -505,47 +510,33 @@ export default function WorldCup2026Predictor() {
   return (
     <>
       <style>{css}</style>
-
       <div className="wc-app">
         <div className="wc-hdr">
           <div>
             <div className="wc-title">⚽ World Cup 2026 Predictor</div>
             <div className="wc-sub">SELECT TWO COUNTRIES ON THE MAP TO PREDICT THE MATCH</div>
           </div>
-
           <div className="wc-badge">48 TEAMS</div>
         </div>
-
         <div className="wc-body">
           <WorldMap selA={selA} selB={selB} onSelect={selectCountry} />
-
           <div className="wc-panel">
             <div className="tabs">
               {["duel", "bracket", "ranking"].map(tab => (
-                <button
-                  key={tab}
-                  className={`tab-btn ${activeTab === tab ? "active" : ""}`}
-                  onClick={() => setActiveTab(tab)}
-                >
+                <button key={tab} className={`tab-btn ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>
                   {tab.toUpperCase()}
                 </button>
               ))}
             </div>
-
             {activeTab === "duel" && (
               <DuelTab
-                selA={selA}
-                selB={selB}
+                selA={selA} selB={selB}
                 onClearA={() => setSelA(null)}
                 onClearB={() => setSelB(null)}
               />
             )}
-
             {activeTab === "bracket" && <BracketTab />}
-
-            {activeTab === "ranking" && (
-              <RankingTab onSelect={selectFromRanking} />
-            )}
+            {activeTab === "ranking" && <RankingTab onSelect={selectFromRanking} />}
           </div>
         </div>
       </div>
